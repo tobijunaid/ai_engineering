@@ -13,20 +13,38 @@ categories = {
     "Others": []
 }
 
-for category in categories:
-    destination = folder / category
-    destination.mkdir(exist_ok=True)
+def create_folders(folder, categories):
+    for category in categories:
+        destination = folder / category
+        destination.mkdir(exist_ok=True)
 
-print("Folders created successfully!")
+def get_category(extension, categories):
+    for category, extensions in categories.items():
+        if category == "Others":
+            continue
+        if extension in extensions:
+            return category
+    return "Others"
 
-for item in folder.iterdir():
-    if item.is_file():
-        extension = item.suffix.lower()
-
-        for category, extensions in categories.items():
-            if extension in extensions:
-                destination = folder / category / item.name
+def organize_files(folder, categories):
+    moved_count = 0
+    for item in folder.iterdir():
+        if item.is_file():
+            extension = item.suffix.lower()
+            category = get_category(extension, categories)
+            destination = folder / category / item.name
+            try:
                 shutil.move(item, destination)
-
+                moved_count += 1
                 print(f"Moved: {item.name} → {category}")
-                break
+            except Exception as e:
+                print(f"Error moving {item.name}: {e}")
+    print(f"Total files moved: {moved_count}")
+
+def main():
+    folder = Path(".")
+    create_folders(folder, categories)
+    organize_files(folder, categories)
+
+if __name__ == "__main__":
+    main()
