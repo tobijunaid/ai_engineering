@@ -30,6 +30,10 @@ def main():
     print(f"CPU Usage (%): {psutil.cpu_percent(interval=1)}%")
     print(f"Disk Usage (%): {disk.percent}")
     print(f"Disk Total: {round((disk.total) / (1024 ** 3), 2)} GB")
+    print(f"Network Interfaces: {list(psutil.net_if_addrs().keys())}")
+    print(f"Network Connections: {len(psutil.net_connections())}")
+    print(f"Wifi Status: {'Connected' if psutil.net_if_stats()['Wi-Fi'].isup else 'Disconnected'}")
+    print(f"Battery Status: {psutil.sensors_battery().percent if psutil.sensors_battery() else 'No Battery'}%")
 
     print(f"Generated at: {current_time}")
     
