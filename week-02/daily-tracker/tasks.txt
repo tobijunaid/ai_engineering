@@ -1,0 +1,26 @@
+[
+    {
+        "title": "Make Some Beats",
+        "completed": false,
+        "challenge": "",
+        "spent_money": 0
+    },
+    {
+        "title": "Make some markets runs",
+        "completed": false,
+        "challenge": "",
+        "spent_money": 0
+    },
+    {
+        "title": "Sleep",
+        "completed": false,
+        "challenge": "",
+        "spent_money": 0
+    },
+    {
+        "title": "Cook Dinner",
+        "completed": true,
+        "challenge": "Didn't know what to make",
+        "spent_money": 3500.0
+    }
+]
