@@ -65,11 +65,11 @@ passed_students = {
 print(passed_students)
 
 def get_high_scores(students):
-    students = {
+    high_score = {
         student["name"] : student["score"]
         for student in students
         if student["score"] >= 80
     }
-    return students
+    return high_score
 
 print(get_high_scores(students))
