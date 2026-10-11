@@ -1,5 +1,12 @@
-{
-    "name": "Tobi",
-    "age": 23,
-    "department": "Computer Engineering"
-}
+[
+    {
+        "name": "Tobi",
+        "score": 90,
+        "department": "Computer Engineering"
+    },
+    {
+        "name": "David",
+        "score": 85,
+        "department": "Computer Science"
+    }
+]

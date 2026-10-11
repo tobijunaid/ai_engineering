@@ -54,7 +54,7 @@ def save_student():
     with open (file_path4, "w", encoding = "utf-8") as file:
         json.dump(student, file, indent=4)
         
-        print(f"Student saved to {file_path4}")
+    print(f"Student saved to {file_path4}")
     
 
 check_file_exists()
