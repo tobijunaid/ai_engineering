@@ -5,7 +5,7 @@ class Student(TypedDict):
     name: str
     score: int
 
-def filter_students(students, minimum_score=80):
+def filter_students(students: list[Student], minimum_score=80) -> list[Student]:
     filtered_students = []
 
     for student in students:
