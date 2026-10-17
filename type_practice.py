@@ -7,7 +7,10 @@ count = get_student_count([{"name": "Tobi", "score": 90}])
 #This was used to test mypy being able to detect the mismatch in required type
 
 def calculate_average(scores: list[int]) -> float:
+    if not scores:
+        raise ValueError("Scores cannot be empty")
+    
     return sum(scores) / len(scores)
 
 
-print(calculate_average([80, 90, 100]))
+# print(calculate_average([80, 90, 100]))

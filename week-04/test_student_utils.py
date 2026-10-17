@@ -1,6 +1,7 @@
 import pytest
 from student_utils import filter_students
 from student_utils import get_student_count
+from type_practice import calculate_average
 
 
 # def test_filter_students():
@@ -90,3 +91,19 @@ def test_get_student_count(students):
     result = get_student_count(students)
 
     assert result == 4
+
+@pytest.mark.parametrize(
+    "scores, expected_answer",
+    [
+        ([10, 20, 30], 20.0),
+        ([5, 10], 7.5),
+        ([8], 8.0),
+    ],
+)
+def test_calculate_average_valid(scores: list[int], expected_answer: float):
+    assert calculate_average(scores) == expected_answer
+
+
+def test_calculate_average_empty_list_raises():
+    with pytest.raises(ValueError, match="Scores cannot be empty"):
+        calculate_average([])
