@@ -105,5 +105,8 @@ def test_calculate_average_valid(scores: list[int], expected_answer: float):
 
 
 def test_calculate_average_empty_list_raises():
-    with pytest.raises(ValueError, match="Scores cannot be empty"):
+    with pytest.raises(
+        ValueError,
+        match="Scores cannot be empty",
+        ):
         calculate_average([])
