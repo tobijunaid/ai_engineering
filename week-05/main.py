@@ -3,7 +3,7 @@ from fastapi import FastAPI #Imports the FastAPI class.
 app = FastAPI() #Creates your API application.
 
 
-# You've now built and practised:
+# You've now built and practiced:
 # - Root endpoint: /
 # - Dynamic path parameter: /hello/{name}
 # - Optional query parameter: /search
