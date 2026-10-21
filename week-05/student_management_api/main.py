@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -21,3 +21,25 @@ def create_student(student: Student): #Defines the function FastAPI calls for th
     return {"message": "Student registered successfully",
             "name": student.name,
             "age": student.age} # Returns a message confirming the creation of the student.
+
+
+class StudentResponse(BaseModel):
+    message: str
+    name: str
+    age: int
+
+@app.post("/students", status_code=201, response_model=StudentResponse)
+def student_response(student: Student):
+    return {"message": "Student registered successfully",
+                "name": student.name,
+                "age": student.age}
+
+def get_app_name():
+    return "Student Management API"
+
+def get_api_version():
+    return "1.0.0"
+
+@app.get("/info")
+def get_info(app_name: str = Depends(get_app_name), version: str = Depends(get_api_version)):
+    return {"app_name": app_name, "version": version}
