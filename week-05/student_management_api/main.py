@@ -28,12 +28,23 @@ class StudentResponse(BaseModel):
     name: str
     age: int
 
-@app.post("/students", status_code=201, response_model=StudentResponse)
+@app.post("/students", status_code=201, response_model=list[StudentResponse])
 def student_response(student: Student):
-    return {"message": "Student registered successfully",
-                "name": student.name,
-                "age": student.age}
+    return [{"message": "Student record", 
+            "name": student.name,
+            "age": student.age}]
 
+
+@app.get("/students", response_model=list[StudentResponse])
+def get_student():
+    return [{"message": "Student record", 
+            "name": "Tobi",
+            "age": 23},
+            {"message": "Student record", 
+            "name": "David",
+            "age": 24}]
+    
+    
 def get_app_name():
     return "Student Management API"
 
@@ -43,3 +54,7 @@ def get_api_version():
 @app.get("/info")
 def get_info(app_name: str = Depends(get_app_name), version: str = Depends(get_api_version)):
     return {"app_name": app_name, "version": version}
+
+@app.get("/version")
+def get_version(app_version: str = Depends(get_api_version)):
+    return {"version": app_version}
