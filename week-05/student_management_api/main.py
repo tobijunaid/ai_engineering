@@ -36,13 +36,24 @@ def get_api_version():
 #             "name": student.name,
 #             "age": student.age} # Returns a message confirming the creation of the student.
 
+# Create — POST /students
+# Read — GET /students and GET /students/{name}
+# Update — PUT /students/{name}
+# Delete — DELETE /students/{name}
+
 @app.post("/students", status_code=201, response_model=StudentResponse)
 def student_response(student: Student):
+    for existing_student in students:
+        if existing_student.name == student.name:
+            raise HTTPException(
+                status_code=409,
+                detail=f"A Student named '{student.name}' already exists"
+            )
     students.append(student)
     return {
-        "message": "Student record", 
-            "name": student.name,
-            "age": student.age
+        "message": "Student record created",
+        "name": student.name,
+        "age": student.age
             }
 
 
@@ -69,7 +80,7 @@ def get_student_by_name(name: str):
     raise HTTPException(status_code=404, detail="Student 'Unknown' not found")
 
 
-class StudentRequest(BaseModel):
+class StudentRequest(BaseModel): #Pydantic model for the request body of the update_student endpoint
     age: int = Field(..., ge=1, description="Age must be greater than zero")
     
 
@@ -80,6 +91,21 @@ def update_student(name: str, updated_student: StudentRequest):
             student.age = updated_student.age
             return {
                 "message": "Student record updated",
+                "name": student.name,
+                "age": student.age
+            }
+    raise HTTPException(
+        status_code=404,
+        detail=f"Student '{name}' not found"
+    )
+
+@app.delete("/students/{name}", response_model=StudentResponse)
+def delete_student(name: str):
+    for student in students:
+        if student.name == name:
+            students.remove(student)
+            return {
+                "message": "Student deleted successfully",
                 "name": student.name,
                 "age": student.age
             }
