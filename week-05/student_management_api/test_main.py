@@ -97,3 +97,42 @@ def test_delete_student():
     # Confirm the student was actually removed
     get_response = client.get("/students/Delete Test")
     assert get_response.status_code == 404
+
+
+def test_get_all_students():
+    client.post(
+        "/students",
+        json={"name": "Tobi", "age": 23}
+    )
+
+    client.post(
+        "/students",
+        json={"name": "David", "age": 24}
+    )
+
+    response = client.get("/students")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert response.json()[0]["name"] == "Tobi"
+    assert response.json()[1]["name"] == "David"
+
+
+def test_update_student_not_found():
+    response = client.put(
+        "/students/UnknownStudent",
+        json={"age": 25}
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "Student 'UnknownStudent' not found"
+    )
+
+def test_delete_student_not_found():
+    response = client.delete("/students/UnknownStudent")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "Student 'UnknownStudent' not found"
+    )
