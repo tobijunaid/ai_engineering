@@ -6,7 +6,8 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
-from main import app, students
+from main import app
+from database import get_connection
 
 client = TestClient(app)
 
@@ -46,7 +47,8 @@ def test_student_not_found():
 
 @pytest.fixture(autouse=True)
 def clear_students():
-    students.clear()
+    with get_connection() as connection:
+        connection.execute("DELETE FROM students")
     
 
 def test_create_student_with_invalid_name():

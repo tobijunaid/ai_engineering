@@ -1,16 +1,29 @@
+
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-students = []
-app = FastAPI()
+from database import (
+    create_table,
+    add_student,
+    get_all_students,
+    get_student_by_name,
+    update_student_age,
+    delete_student,
+)
 
-# You've now covered:
-# - HTTP GET and POST routes.
-# - Path and query parameters.
-# - Pydantic request models.
-# - Required fields and type validation.
-# - Numeric constraints with ge.
-# - String constraints with min_length.
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_table()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+
 # - Testing valid and invalid requests using Swagger UI.
 class Student(BaseModel): #BaseModel provides data validation.
     name: str = Field(..., min_length=2, description="Name must have 2 or more characters") #name: str means the student's name should be a string.
@@ -43,41 +56,54 @@ def get_api_version():
 
 @app.post("/students", status_code=201, response_model=StudentResponse)
 def student_response(student: Student):
-    for existing_student in students:
-        if existing_student.name == student.name:
-            raise HTTPException(
-                status_code=409,
-                detail=f"A Student named '{student.name}' already exists"
-            )
-    students.append(student)
+    if get_student_by_name(student.name):
+        raise HTTPException(
+            status_code=409,
+            detail=f"A student named '{student.name}' already exists"
+        )
+
+    try:
+        add_student(student.name, student.age)
+    except Exception:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A student named '{student.name}' already exists"
+        )
+
     return {
         "message": "Student record created",
         "name": student.name,
         "age": student.age
-            }
-
+    }
 
 @app.get("/students", response_model=list[StudentResponse])
 def get_student():
     return [
         {
             "message": "Student record",
-            "name": student.name,
-            "age": student.age
+            "name": student["name"],
+            "age": student["age"]
         }
-        for student in students
+        for student in get_all_students()
     ]
+
     
 @app.get("/students/{name}", response_model=StudentResponse)
-def get_student_by_name(name: str):
-    for student in students:
-        if student.name == name:
-            return {
-                "message": "Student record",
-                "name": student.name,
-                "age": student.age
-            }
-    raise HTTPException(status_code=404, detail="Student 'UnknownStudent' not found")
+def get_student_by_name_endpoint(name: str):
+    student = get_student_by_name(name)
+
+    if student is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Student '{name}' not found"
+        )
+
+    return {
+        "message": "Student record",
+        "name": student["name"],
+        "age": student["age"]
+    }
+
 
 
 class StudentRequest(BaseModel): #Pydantic model for the request body of the update_student endpoint
@@ -86,33 +112,39 @@ class StudentRequest(BaseModel): #Pydantic model for the request body of the upd
 
 @app.put("/students/{name}", response_model=StudentResponse)
 def update_student(name: str, updated_student: StudentRequest):
-    for student in students:
-        if student.name == name:
-            student.age = updated_student.age
-            return {
-                "message": "Student record updated",
-                "name": student.name,
-                "age": student.age
-            }
-    raise HTTPException(
-        status_code=404,
-        detail=f"Student '{name}' not found"
-    )
+    student = get_student_by_name(name)
+
+    if student is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Student '{name}' not found"
+        )
+
+    update_student_age(name, updated_student.age)
+
+    return {
+        "message": "Student record updated",
+        "name": name,
+        "age": updated_student.age
+    }
 
 @app.delete("/students/{name}", response_model=StudentResponse)
-def delete_student(name: str):
-    for student in students:
-        if student.name == name:
-            students.remove(student)
-            return {
-                "message": "Student deleted successfully",
-                "name": student.name,
-                "age": student.age
-            }
-    raise HTTPException(
-        status_code=404,
-        detail=f"Student '{name}' not found"
-    )
+def delete_student_endpoint(name: str):
+    student = get_student_by_name(name)
+
+    if student is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Student '{name}' not found"
+        )
+
+    delete_student(name)
+
+    return {
+        "message": "Student deleted successfully",
+        "name": student["name"],
+        "age": student["age"]
+    }
 
 # A useful lesson for your backend journey
 # This is exactly why response models matter. 
@@ -133,3 +165,13 @@ def get_status(version: str = Depends(get_api_version)):
 @app.get("/version")
 def get_version(app_version: str = Depends(get_api_version)):
     return {"version": app_version}
+
+
+
+# You've now covered:
+# - HTTP GET and POST routes.
+# - Path and query parameters.
+# - Pydantic request models.
+# - Required fields and type validation.
+# - Numeric constraints with ge.
+# - String constraints with min_length.
