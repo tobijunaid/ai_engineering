@@ -77,7 +77,7 @@ def get_student_by_name(name: str):
                 "name": student.name,
                 "age": student.age
             }
-    raise HTTPException(status_code=404, detail="Student 'Unknown' not found")
+    raise HTTPException(status_code=404, detail="Student 'UnknownStudent' not found")
 
 
 class StudentRequest(BaseModel): #Pydantic model for the request body of the update_student endpoint
