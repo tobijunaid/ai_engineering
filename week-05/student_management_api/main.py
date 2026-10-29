@@ -1,6 +1,6 @@
-
+import sqlite3
+from database import get_connection, add_student, get_all_students, get_student_by_name
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -64,7 +64,7 @@ def student_response(student: Student):
 
     try:
         add_student(student.name, student.age)
-    except Exception:
+    except sqlite3.IntegrityError:
         raise HTTPException(
             status_code=409,
             detail=f"A student named '{student.name}' already exists"

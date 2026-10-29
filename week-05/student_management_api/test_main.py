@@ -2,12 +2,12 @@
 # client.post(...) simulates a client creating a student.
 # json=... supplies the request body.
 # assert checks whether the actual result matches what you expect. If an assertion fails, pytest reports a failed test.
-
+import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 from main import app
 from main import app
-from database import get_connection
+from database import get_connection, add_student, get_all_students, get_student_by_name
 
 client = TestClient(app)
 
@@ -138,3 +138,9 @@ def test_delete_student_not_found():
     assert response.json()["detail"] == (
         "Student 'UnknownStudent' not found"
     )
+
+def test_database_rejects_duplicate_names():
+    add_student("Unique Test", 20)
+
+    with pytest.raises(sqlite3.IntegrityError):
+        add_student("Unique Test", 22)
