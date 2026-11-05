@@ -1,4 +1,4 @@
-Let's design the first two tables. We'll use PostgreSQL and SQLAlchemy 2.0 conventions.
+Design for first two tables. We'll use PostgreSQL and SQLAlchemy 2.0 conventions.
 
 ## 1. `businesses` table
 
@@ -55,13 +55,8 @@ Many users can belong to one business
 
 For example, Business A can have one owner and five staff members. All six user records reference the same business ID.
 
-## 4. Your understanding
 
-Correct! The staff member's `business_id` will be 202 because they belong to Business B.
-
-That's the purpose of a foreign key: it connects a record in one table to a record in another table.
-
-### Next: Products table
+## 4. Products table
 
 The `products` table stores the items each business sells.
 
@@ -82,9 +77,7 @@ Two important design decisions:
 - `business_id` ensures each product belongs to a particular business.
 - `sku` should be unique within a business, not necessarily across the entire platform.
 
-Got it. Going forward, I'll make the design decisions using sound engineering practices, explain them briefly, and keep us moving without asking you to approve every choice.
-
-## 3. `inventory` table
+## 5. `inventory` table
 
 This table stores the current stock quantity for each product.
 
@@ -99,7 +92,7 @@ Why separate it from products? Product details and inventory levels represent di
 
 Each product will have one inventory record.
 
-## 4. `inventory_movements` table
+## 6. `inventory_movements` table
 
 We'll also maintain a complete history of stock changes.
 
@@ -124,7 +117,7 @@ The movement type determines whether stock increases or decreases. For example:
 
 The `inventory.quantity` field stores the current balance, while `inventory_movements` provides the historical record.
 
-## 5. Updated relationship overview
+## 7. Updated relationship overview
 
 BUSINESSES
 
@@ -148,7 +141,7 @@ Next, we'll design the `customers`, `invoices`, `invoice_items`, and `payments` 
 
 Let's finish the remaining database tables.
 
-## 5. `customers` table
+## 8. `customers` table
 
 Stores customers belonging to each business.
 
@@ -165,7 +158,7 @@ Stores customers belonging to each business.
 
 A business can have many customers. Customer email and phone should not be globally unique because different businesses may serve the same customer.
 
-## 6. `invoices` table
+## 9. `invoices` table
 
 Stores the main information about each invoice.
 
@@ -186,7 +179,7 @@ Stores the main information about each invoice.
 
 Invoice numbers must be unique within each business.
 
-## 7. `invoice_items` table
+## 10. `invoice_items` table
 
 An invoice can contain multiple products. This table stores each individual line item.
 
@@ -204,7 +197,7 @@ Why store `product_name` and `unit_price` here when they already exist in `produ
 
 Because product details and prices can change. An invoice issued yesterday must retain yesterday's price even if the product price changes tomorrow.
 
-## 8. `payments` table
+## 11. `payments` table
 
 Stores payments made against invoices.
 
@@ -228,7 +221,7 @@ For example:
 - Outstanding balance: ₦15,000
 - Payment status: `partially_paid`
 
-## 9. Complete database relationship overview
+## 12. Complete database relationship overview
 
 Core relationships
 
@@ -288,7 +281,7 @@ Invoices
 
 Payments
 
-## 10. What we've designed
+### What we've designed
 
 We now have nine core tables:
 
