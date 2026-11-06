@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     CheckConstraint,
@@ -45,7 +46,7 @@ class Product(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     sku: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    selling_price: Mapped[float] = mapped_column(
+    selling_price: Mapped[Decimal] = mapped_column(
         Numeric(12, 2),
         nullable=False
     )
