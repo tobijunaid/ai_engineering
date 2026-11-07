@@ -19,6 +19,11 @@ class InventoryMovement(Base):
     __tablename__ = "inventory_movements"
 
     __table_args__ = (
+        # These constraints make PostgreSQL enforce valid values, even if an invalid value somehow gets past our API.
+        CheckConstraint(
+            "movement_type IN ('stock_in', 'sale', 'return', 'damage', 'adjustment')",
+            name="ck_inventory_movements_type"
+        ),
         CheckConstraint(
             "quantity > 0",
             name="ck_inventory_movements_quantity_positive"

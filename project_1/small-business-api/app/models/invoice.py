@@ -20,6 +20,17 @@ class Invoice(Base):
     __tablename__ = "invoices"
 
     __table_args__ = (
+        # These constraints make PostgreSQL enforce valid values, even if an invalid value somehow gets past our API.
+        CheckConstraint(
+            "status IN ('draft', 'confirmed', 'void')",
+            name="ck_invoices_status"
+        ),
+        CheckConstraint(
+            # These constraints make PostgreSQL enforce valid values, even if an invalid value somehow gets past our API.
+            "payment_status IN ('unpaid', 'partially_paid', 'paid')",
+            name="ck_invoices_payment_status"
+        ),
+        
         UniqueConstraint(
             "business_id",
             "invoice_number",
