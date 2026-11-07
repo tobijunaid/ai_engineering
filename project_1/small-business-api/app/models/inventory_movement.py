@@ -10,10 +10,14 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.business import Business
+    from app.models.product import Product
 
 class InventoryMovement(Base):
     __tablename__ = "inventory_movements"
@@ -72,4 +76,14 @@ class InventoryMovement(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now()
+    )
+    
+    business: Mapped["Business"] = relationship(
+    "Business",
+    back_populates="inventory_movements"
+    )
+
+    product: Mapped["Product"] = relationship(
+    "Product",
+    back_populates="inventory_movements"
     )

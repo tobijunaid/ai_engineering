@@ -12,9 +12,14 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
 
-from app.db.session import Base
+if TYPE_CHECKING:
+    from app.models.inventory import Inventory
+    from app.db.session import Base
+    from app.models.business import Business
+    from app.models.inventory_movement import InventoryMovement
 
 
 class Product(Base):
@@ -65,4 +70,20 @@ class Product(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+    
+    inventory: Mapped["Inventory"] = relationship(
+    "Inventory",
+    back_populates="product",
+    uselist=False
+    )
+    
+    business: Mapped["Business"] = relationship(
+    "Business",
+    back_populates="products"
+)
+
+    inventory_movements: Mapped[list["InventoryMovement"]] = relationship(
+    "InventoryMovement",
+    back_populates="product"
     )

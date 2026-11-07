@@ -1,10 +1,18 @@
 import uuid
 from datetime import datetime
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.customer import Customer
+    from app.models.invoice import Invoice
+    from app.models.user import User
+    from app.models.product import Product
+    from app.models.inventory_movement import InventoryMovement
 
 
 class Business(Base):
@@ -28,5 +36,28 @@ class Business(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+    
+    users: Mapped[list["User"]] = relationship(
+    "User",
+    back_populates="business"
+    )
+    
+    products: Mapped[list["Product"]] = relationship(
+    "Product",
+    back_populates="business"
+    )
 
-    users = relationship("User", back_populates="business")
+    inventory_movements: Mapped[list["InventoryMovement"]] = relationship(
+    "InventoryMovement",
+    back_populates="business"
+    )
+    
+    customers: Mapped[list["Customer"]] = relationship(
+    "Customer",
+    back_populates="business"
+    )
+
+    invoices: Mapped[list["Invoice"]] = relationship(
+    "Invoice",
+    back_populates="business"
+    )

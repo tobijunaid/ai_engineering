@@ -11,10 +11,14 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.invoice import Invoice
+    from app.models.user import User
 
 class Payment(Base):
     __tablename__ = "payments"
@@ -59,4 +63,14 @@ class Payment(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now()
+    )
+    
+    invoice: Mapped["Invoice"] = relationship(
+    "Invoice",
+    back_populates="payments"
+    )  
+
+    recorded_by_user: Mapped["User"] = relationship(
+    "User",
+    back_populates="payments"
     )

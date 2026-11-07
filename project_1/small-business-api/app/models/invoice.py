@@ -11,10 +11,16 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.invoice_item import InvoiceItem
+    from app.models.payment import Payment
+    from app.models.business import Business
+    from app.models.customer import Customer
 
 class Invoice(Base):
     __tablename__ = "invoices"
@@ -109,4 +115,25 @@ class Invoice(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+    
+    business: Mapped["Business"] = relationship(
+    "Business",
+    back_populates="invoices"
+    )
+
+    customer: Mapped["Customer"] = relationship(
+    "Customer",
+    back_populates="invoices"
+    )
+    
+    items: Mapped[list["InvoiceItem"]] = relationship(
+    "InvoiceItem",
+    back_populates="invoice",
+    cascade="all, delete-orphan"
+    )
+
+    payments: Mapped[list["Payment"]] = relationship(
+    "Payment",
+    back_populates="invoice"
     )

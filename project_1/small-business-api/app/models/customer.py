@@ -2,10 +2,14 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.business import Business
+    from app.models.invoice import Invoice
 
 class Customer(Base):
     __tablename__ = "customers"
@@ -49,4 +53,14 @@ class Customer(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+    
+    business: Mapped["Business"] = relationship(
+    "Business",
+    back_populates="customers"
+    )
+
+    invoices: Mapped[list["Invoice"]] = relationship(
+    "Invoice",
+    back_populates="customer"
     )

@@ -12,7 +12,11 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.payment import Payment
+    from app.models.business import Business
 
 class User(Base):
     __tablename__ = "users"
@@ -51,4 +55,12 @@ class User(Base):
         onupdate=func.now()
     )
 
-    business = relationship("Business", back_populates="users")
+    business: Mapped["Business"] = relationship(
+    "Business",
+    back_populates="users"
+    )
+    
+    payments: Mapped[list["Payment"]] = relationship(
+    "Payment",
+    back_populates="recorded_by_user"
+    )

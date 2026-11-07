@@ -7,10 +7,14 @@ from sqlalchemy import (
     Numeric,
     String,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.invoice import Invoice
+    from app.models.product import Product
 
 class InvoiceItem(Base):
     __tablename__ = "invoice_items"
@@ -63,4 +67,13 @@ class InvoiceItem(Base):
     line_total: Mapped[Decimal] = mapped_column(
         Numeric(12, 2),
         nullable=False
+    )
+    
+    invoice: Mapped["Invoice"] = relationship(
+    "Invoice",
+    back_populates="items"
+    )
+
+    product: Mapped["Product"] = relationship(
+    "Product"
     )
