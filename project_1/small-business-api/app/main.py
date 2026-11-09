@@ -1,4 +1,9 @@
 from fastapi import FastAPI
+from sqlalchemy import text
+from fastapi import Depends, FastAPI
+from sqlalchemy.orm import Session
+
+from app.db.dependencies import get_db
 
 app = FastAPI(
     title="Small Business Inventory API",
@@ -15,6 +20,10 @@ def root():
     }
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+@app.get("/health/database")
+def database_health(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return {"database": "connected"}
+    except Exception:
+        return {"database": "disconnected"}

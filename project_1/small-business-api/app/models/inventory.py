@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.product import Product
+    
 from app.db.session import Base
 
 
