@@ -24,7 +24,14 @@ def register(
             user_data=user_data,
         )
         return user
-
+    
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+        
+        
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

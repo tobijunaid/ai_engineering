@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from sqlalchemy import select
 from app.models.business import Business
 from app.models.user import User
 from app.schemas.user import UserCreate
@@ -11,6 +11,14 @@ def register_business_owner(
     business_name: str,
     user_data: UserCreate,
 ) -> User:
+    
+    existing_user = db.scalar(
+        select(User).where(User.email == user_data.email)
+    )
+
+    if existing_user:
+        raise ValueError("Email is already registered.")
+    
     try:
         business = Business(
             name=business_name
