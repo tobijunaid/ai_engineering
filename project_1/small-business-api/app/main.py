@@ -1,3 +1,4 @@
+from app.api.v1.auth import router as auth_router
 from fastapi import FastAPI
 from sqlalchemy import text
 from fastapi import Depends, FastAPI
@@ -11,6 +12,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.include_router(auth_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
@@ -27,3 +29,4 @@ def database_health(db: Session = Depends(get_db)):
         return {"database": "connected"}
     except Exception:
         return {"database": "disconnected"}
+
