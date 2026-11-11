@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from fastapi.security import OAuth2PasswordRequestForm
 from app.models.user import User
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_role
 from app.db.dependencies import get_db
-from app.schemas.user import UserCreate, UserResponse, UserLogin, TokenResponse
-from app.services.auth_service import register_business_owner, login_user
+from app.schemas.user import UserCreate, UserResponse, UserLogin, TokenResponse, StaffCreate
+from app.services.auth_service import register_business_owner, login_user, create_staff
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -42,9 +42,14 @@ def register(
 
 @router.post("/login", response_model=TokenResponse)
 def login(
-    login_data: UserLogin,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    login_data = UserLogin(
+        email=form_data.username,
+        password=form_data.password,
+    )
+
     try:
         return login_user(db, login_data)
 
@@ -52,10 +57,54 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(error),
+            headers={"WWW-Authenticate": "Bearer"},
         ) from error
         
+
 @router.get("/me", response_model=UserResponse)
 def get_me(
     current_user: User = Depends(get_current_user),
 ):
     return current_user
+
+@router.get("/owner-check")
+def owner_check(
+    current_user: User = Depends(require_role("owner")),
+):
+    return {
+        "message": "Owner access granted.",
+        "user": current_user.full_name,
+        "role": current_user.role,
+    }
+    
+'''
+This endpoint below:
+- Requires an authenticated owner.
+- Automatically assigns the owner's business_id to the staff member.
+- Assigns the staff role.
+- Returns 409 Conflict if the email already exists.
+'''
+@router.post(
+    "/staff",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register_staff(
+    staff_data: StaffCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("owner")),
+):
+    try:
+        staff = create_staff(
+            db=db,
+            owner=current_user,
+            staff_data=staff_data,
+        )
+        return staff
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+

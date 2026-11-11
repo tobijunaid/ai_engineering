@@ -2,10 +2,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.models.business import Business
 from app.models.user import User
-from app.schemas.user import UserCreate
-from app.core.security import hash_password
-from app.core.security import verify_password, create_access_token
-from app.schemas.user import UserLogin
+from app.schemas.user import UserCreate, UserLogin, StaffCreate
+from app.core.security import hash_password, verify_password, create_access_token
+
+
 
 
 def register_business_owner(
@@ -85,3 +85,49 @@ def login_user(db: Session, login_data: UserLogin) -> dict:
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+def create_staff(
+    db: Session,
+    owner: User,
+    staff_data: StaffCreate,
+) -> User:
+    existing_user = db.scalar(
+        select(User).where(User.email == staff_data.email)
+    )
+
+    if existing_user:
+        raise ValueError("Email is already registered.")
+
+    try:
+        staff = User(
+            #owner.business_id: Automatically associates the staff member with the owner's business.
+            business_id=owner.business_id,
+            full_name=staff_data.full_name,
+            email=staff_data.email,
+            hashed_password=hash_password(staff_data.password), #hash_password(): Ensures the staff password is never stored as plain text.
+            role="staff", #role="staff": Prevents the client from choosing their own role.
+            is_active=True,
+        )
+
+        db.add(staff)
+        db.commit() #db.commit(): Saves the new staff account.
+        db.refresh(staff)
+
+        return staff
+
+    except Exception:
+        db.rollback()
+        raise
+
+def get_business_staff(
+    db: Session,
+    owner: User,
+) -> list[User]:
+    return list(
+        db.scalars(
+            select(User).where(
+                User.business_id == owner.business_id,
+                User.role == "staff",
+            )
+        ).all()
+    )
