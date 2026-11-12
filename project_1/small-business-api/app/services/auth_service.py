@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from uuid import UUID
 from app.models.business import Business
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, StaffCreate
@@ -131,3 +132,27 @@ def get_business_staff(
             )
         ).all()
     )
+    
+def deactivate_staff(
+    db: Session,
+    owner: User,
+    staff_id: UUID,
+) -> User:
+    staff = db.scalar(
+        select(User).where(
+            User.id == staff_id,
+            User.business_id == owner.business_id,
+            User.role == "staff",
+        )
+    )
+
+    if not staff:
+        raise ValueError("Staff member not found.")
+
+    staff.is_active = False
+
+    db.commit()
+    db.refresh(staff)
+
+    return staff
+

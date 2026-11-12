@@ -1,11 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from uuid import UUID
 from fastapi.security import OAuth2PasswordRequestForm
 from app.models.user import User
 from app.core.security import get_current_user, require_role
 from app.db.dependencies import get_db
 from app.schemas.user import UserCreate, UserResponse, UserLogin, TokenResponse, StaffCreate
-from app.services.auth_service import register_business_owner, login_user, create_staff
+from app.services.auth_service import (
+    register_business_owner,
+    login_user,
+    create_staff,
+    get_business_staff,
+    deactivate_staff,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -108,3 +115,31 @@ def register_staff(
             detail=str(error),
         ) from error
 
+'''
+What this endpoint below does
+- GET /api/v1/auth/staff retrieves staff members.
+- Only users with the owner role can access it.
+- It returns staff belonging to the authenticated owner's business.
+- It does not expose staff belonging to other businesses.
+'''
+
+@router.get("/staff", response_model=list[UserResponse])
+def list_staff(
+    current_user: User = Depends(require_role("owner")),
+    db: Session = Depends(get_db),
+):
+    return get_business_staff(db, current_user)
+
+@router.patch("/staff/{staff_id}/deactivate", response_model=UserResponse)
+def deactivate_staff_member(
+    staff_id: UUID,
+    current_user: User = Depends(require_role("owner")),
+    db: Session = Depends(get_db),
+):
+    try:
+        return deactivate_staff(db, current_user, staff_id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        )
