@@ -12,6 +12,7 @@ from app.services.auth_service import (
     create_staff,
     get_business_staff,
     deactivate_staff,
+    reactivate_staff
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -143,3 +144,21 @@ def deactivate_staff_member(
             status_code=404,
             detail=str(error),
         )
+
+@router.patch(
+    "/staff/{staff_id}/reactivate",
+    response_model=UserResponse,
+)
+def reactivate_staff_member(
+    staff_id: UUID,
+    current_user: User = Depends(require_role("owner")),
+    db: Session = Depends(get_db),
+):
+    try:
+        return reactivate_staff(db, current_user, staff_id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        )
+

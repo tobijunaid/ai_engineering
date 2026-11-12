@@ -3,7 +3,7 @@ from sqlalchemy import select
 from uuid import UUID
 from app.models.business import Business
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, StaffCreate
+from app.schemas.user import UserCreate, UserLogin, StaffCreate, StaffUpdate
 from app.core.security import hash_password, verify_password, create_access_token
 
 
@@ -156,3 +156,50 @@ def deactivate_staff(
 
     return staff
 
+def reactivate_staff(
+    db: Session,
+    owner: User,
+    staff_id: UUID,
+) -> User:
+    staff = db.scalar(
+        select(User).where(
+            User.id == staff_id,
+            User.business_id == owner.business_id,
+            User.role == "staff",
+        )
+    )
+
+    if not staff:
+        raise ValueError("Staff member not found.")
+
+    staff.is_active = True
+
+    db.commit()
+    db.refresh(staff)
+
+    return staff
+
+
+def update_staff(
+    db: Session,
+    owner: User,
+    staff_id: UUID,
+    staff_data:StaffUpdate
+) -> User:
+    staff = db.scalar(
+        select(User).where(
+            User.id == staff_id,
+            User.business_id == owner.business_id,
+            User.role == "staff",
+        )
+    )
+    if not staff:
+            raise ValueError("Staff member not found.")
+        
+    staff.full_name = staff_data.full_name
+    
+
+    db.commit()
+    db.refresh(staff)
+
+    return staff
