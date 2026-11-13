@@ -184,7 +184,7 @@ def update_staff(
     db: Session,
     owner: User,
     staff_id: UUID,
-    staff_data:StaffUpdate
+    staff_data: StaffUpdate
 ) -> User:
     staff = db.scalar(
         select(User).where(
@@ -194,7 +194,7 @@ def update_staff(
         )
     )
     if not staff:
-            raise ValueError("Staff member not found.")
+        raise ValueError("Staff member not found.")
         
     staff.full_name = staff_data.full_name
     

@@ -5,14 +5,15 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.models.user import User
 from app.core.security import get_current_user, require_role
 from app.db.dependencies import get_db
-from app.schemas.user import UserCreate, UserResponse, UserLogin, TokenResponse, StaffCreate
+from app.schemas.user import UserCreate, UserResponse, UserLogin, TokenResponse, StaffCreate, StaffUpdate
 from app.services.auth_service import (
     register_business_owner,
     login_user,
     create_staff,
     get_business_staff,
     deactivate_staff,
-    reactivate_staff
+    reactivate_staff,
+    update_staff
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -162,3 +163,20 @@ def reactivate_staff_member(
             detail=str(error),
         )
 
+@router.patch(
+    "/staff/{staff_id}",
+    response_model=UserResponse,
+)
+def update_staff_member(
+    staff_data: StaffUpdate,
+    staff_id: UUID,
+    current_user: User = Depends(require_role("owner")),
+    db: Session = Depends(get_db),
+):
+    try:
+        return update_staff(db, current_user, staff_id, staff_data)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        )

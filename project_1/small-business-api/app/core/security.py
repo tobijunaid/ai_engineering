@@ -96,7 +96,8 @@ def get_current_user(
 
     user = db.get(User, user_uuid)
 
-    if user is None or not user.is_active:
+    if user is None or not user.is_active: #user is None: The user ID in the token doesn't correspond to an existing database record.
+        #not user.is_active: The account exists, but it has been deactivated.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive.",
