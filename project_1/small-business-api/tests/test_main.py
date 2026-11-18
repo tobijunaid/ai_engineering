@@ -122,3 +122,182 @@ def test_get_current_user_without_token(client):
     response = client.get("/api/v1/auth/me")
 
     assert response.status_code == 401
+    
+
+def test_staff_cannot_access_owner_endpoints(client):
+    # Register owner
+    response1 = client.post("/api/v1/auth/register", json={
+            "business_name": "Tobi Stores",
+            "full_name": "Tobi Junaid",
+            "email": "tobi_test@example.com",
+            "password": "TestPassword123"
+        })
+
+    # Log in the owner
+    login_response1 = client.post("/api/v1/auth/login", data={
+        "username": "tobi_test@example.com",
+        "password": "TestPassword123"
+    })
+    
+    owner_token = login_response1.json()["access_token"]
+    
+    #Register Staff
+    response = client.post("/api/v1/auth/staff", json={
+        "full_name": "David Smith",
+        "email": "david_test@example.com",
+        "password": "StaffPassword123"
+    },
+    headers={"Authorization": f"Bearer {owner_token}"}
+)
+    
+    login_response2 = client.post("/api/v1/auth/login", data={
+            "username": "david_test@example.com",
+            "password": "StaffPassword123"
+        })
+
+    access_token = login_response2.json()["access_token"]
+
+    # Attempt to access owner-only endpoint
+    response2 = client.get("/api/v1/auth/owner-check", headers={
+        "Authorization": f"Bearer {access_token}"
+    })
+
+    assert response.status_code == 201
+    assert response2.status_code == 403
+    
+
+def test_owner_can_access_owner_endpoint(client):
+    # Register owner
+    response1 = client.post("/api/v1/auth/register", json={
+        "business_name": "Tobi Stores",
+        "full_name": "Tobi Junaid",
+        "email": "tobi_test@example.com",
+        "password": "TestPassword123"
+    })
+
+    assert response1.status_code == 201
+
+    # Log in the owner
+    login_response1 = client.post("/api/v1/auth/login", data={
+        "username": "tobi_test@example.com",
+        "password": "TestPassword123"
+    })
+
+    access_token = login_response1.json()["access_token"]
+
+    # Access owner-only endpoint
+    response2 = client.get(
+        "/api/v1/auth/owner-check",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+
+    assert response2.status_code == 200
+    
+def test_deactivated_staff_cannot_access_protected_route(client):
+        # Register owner
+        response1 = client.post("/api/v1/auth/register", json={
+                "business_name": "Tobi Stores",
+                "full_name": "Tobi Junaid",
+                "email": "tobi_test@example.com",
+                "password": "TestPassword123"
+            })
+    
+        # Log in the owner
+        login_response1 = client.post("/api/v1/auth/login", data={
+            "username": "tobi_test@example.com",
+            "password": "TestPassword123"
+        })
+        
+        owner_token = login_response1.json()["access_token"]
+        
+        #Register Staff
+        response2 = client.post("/api/v1/auth/staff", json={
+            "full_name": "David Smith",
+            "email": "david_test@example.com",
+            "password": "StaffPassword123"
+        },
+        headers={"Authorization": f"Bearer {owner_token}"}
+    )
+        
+        login_response2 = client.post("/api/v1/auth/login", data={
+                "username": "david_test@example.com",
+                "password": "StaffPassword123"
+            })
+    
+        access_token = login_response2.json()["access_token"]
+        
+        staff_id = response2.json()["id"]
+
+        response3 = client.patch(
+        f"/api/v1/auth/staff/{staff_id}/deactivate",
+        headers={"Authorization": f"Bearer {owner_token}"}
+    )
+        
+        response4 = client.get("/api/v1/auth/me",headers =
+                                {"Authorization": f"Bearer {access_token}"})
+        
+        assert response4.status_code == 401
+        assert response3.status_code == 200
+        
+def test_reactivated_staff_can_access_protected_route(client):
+            # Register owner
+            response1 = client.post("/api/v1/auth/register", json={
+                    "business_name": "Tobi Stores",
+                    "full_name": "Tobi Junaid",
+                    "email": "tobi_test@example.com",
+                    "password": "TestPassword123"
+                })
+        
+            # Log in the owner
+            login_response1 = client.post("/api/v1/auth/login", data={
+                "username": "tobi_test@example.com",
+                "password": "TestPassword123"
+                })
+            
+            owner_token = login_response1.json()["access_token"]
+            
+            #Register Staff
+            response2 = client.post("/api/v1/auth/staff", json={
+                "full_name": "David Smith",
+                "email": "david_test@example.com",
+                "password": "StaffPassword123"
+                },
+            headers={"Authorization": f"Bearer {owner_token}"
+                })
+            
+            login_response2 = client.post("/api/v1/auth/login", data={
+                    "username": "david_test@example.com",
+                    "password": "StaffPassword123"
+                })
+        
+            access_token = login_response2.json()["access_token"]
+            
+            staff_id = response2.json()["id"]
+    
+            response3 = client.patch(
+                f"/api/v1/auth/staff/{staff_id}/deactivate",
+                headers={"Authorization": f"Bearer {owner_token}"
+                })
+            
+            response4 = client.get("/api/v1/auth/me",headers =
+                                    {"Authorization": f"Bearer {access_token}"})
+            
+            #Reactivate Staff
+            response5 = client.patch(
+                f"/api/v1/auth/staff/{staff_id}/reactivate",
+                headers={"Authorization": f"Bearer {owner_token}"
+                })
+            
+            # Get the current user
+            response6 = client.get("/api/v1/auth/me",headers =
+                        {"Authorization": f"Bearer {access_token}"})
+            
+            assert response1.status_code == 201
+            assert login_response1.status_code == 200
+            assert response2.status_code == 201
+            assert login_response2.status_code == 200
+            assert response4.status_code == 401
+            assert response3.status_code == 200
+            assert response5.status_code == 200
+            assert response6.json()["email"] == "david_test@example.com"
+            assert response6.json()["role"] == "staff"
