@@ -130,4 +130,4 @@ See [`../../SPRINT_TRACKER.md`](../../SPRINT_TRACKER.md) for known limits, tech 
 
 ## Status
 
-MVP complete — 88 tests passing. Still to do: README refresh in the parent design doc, GitHub Actions CI, deployment notes.
+MVP complete — **88 tests passing**, run on every push via GitHub Actions (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). Still to do: deployment notes, refresh tokens, pagination.
