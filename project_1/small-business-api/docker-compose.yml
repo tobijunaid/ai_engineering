@@ -1,0 +1,43 @@
+# Local development stack: one Postgres container + the API.
+# Run from this directory with `docker compose up --build`.
+# The API listens on http://localhost:8000.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_prod}
+      POSTGRES_DB: ${POSTGRES_DB:-small_business_db}
+    ports:
+      - "5433:5432"   # 5433 on the host to avoid clashing with a local Postgres on 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # The API waits (depends_on: service_healthy) until this passes, so migrations
+      # don't run before Postgres is ready to accept connections.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-small_business_db}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: Small Business Inventory API
+      APP_ENV: ${APP_ENV:-development}
+      # `db` is the Postgres container's hostname inside the compose network.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-change_me_in_prod}@db:5432/${POSTGRES_DB:-small_business_db}
+      TEST_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-change_me_in_prod}@db:5432/small_business_test_db
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:

@@ -25,12 +25,16 @@ class InventoryMovement(Base):
     __table_args__ = (
         # These constraints make PostgreSQL enforce valid values, even if an invalid value somehow gets past our API.
         CheckConstraint(
-            "movement_type IN ('stock_in', 'sale', 'return', 'damage', 'adjustment')",
+            "movement_type IN ('stock_in', 'sale', 'return', 'damage', 'adjustment', 'void_reversal')",
             name="ck_inventory_movements_type"
         ),
         CheckConstraint(
             "quantity > 0",
             name="ck_inventory_movements_quantity_positive"
+        ),
+        CheckConstraint(
+            "quantity_after >= 0",
+            name="ck_inventory_movements_quantity_after_nonnegative"
         ),
     )
 
@@ -55,6 +59,13 @@ class InventoryMovement(Base):
     )
 
     quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    # Stock balance immediately after this movement. Turns the movements table into a
+    # ledger: direction is always derivable, and history can be audited/reconciled.
+    quantity_after: Mapped[int] = mapped_column(
         Integer,
         nullable=False
     )

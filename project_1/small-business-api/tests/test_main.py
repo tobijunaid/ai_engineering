@@ -301,3 +301,90 @@ def test_reactivated_staff_can_access_protected_route(client):
             assert response5.status_code == 200
             assert response6.json()["email"] == "david_test@example.com"
             assert response6.json()["role"] == "staff"
+
+def test_owner_cannot_access_another_business_staff(client):
+                # Register Tobi Stores owner
+                response1 = client.post("/api/v1/auth/register", json={
+                        "business_name": "Tobi Stores",
+                        "full_name": "Tobi Junaid",
+                        "email": "tobi_test@example.com",
+                        "password": "TestPassword123"
+                    })
+            
+                # Log in Tobi Stores
+                login_response1 = client.post("/api/v1/auth/login", data={
+                    "username": "tobi_test@example.com",
+                    "password": "TestPassword123"
+                    })
+                
+                owner_token = login_response1.json()["access_token"]
+                
+                #Register Staff
+                response2 = client.post("/api/v1/auth/staff", json={
+                    "full_name": "David Smith",
+                    "email": "david_test@example.com",
+                    "password": "StaffPassword123",
+                    "is_active": True
+                    },
+                headers={"Authorization": f"Bearer {owner_token}"
+                    })
+                
+                david_id = response2.json()["id"]
+                
+                # Register Grace Stores owner
+                response3 = client.post("/api/v1/auth/register", json={
+                        "business_name": "Grace Stores",
+                        "full_name": "Grace Junaid",
+                        "email": "grace_test@example.com",
+                        "password": "Test2Password123"
+                    })
+            
+                # Log in Grace Stores
+                login_response2 = client.post("/api/v1/auth/login", data={
+                    "username": "grace_test@example.com",
+                    "password": "Test2Password123"
+                    })
+                
+                owner_token2 = login_response2.json()["access_token"]
+                
+                #Register Grace Staff
+                response4 = client.post("/api/v1/auth/staff", json={
+                    "full_name": "Sarah Smith",
+                    "email": "sarah_test@example.com",
+                    "password": "Staff2Password123",
+                    "is_active": True
+                    },
+                headers={"Authorization": f"Bearer {owner_token2}"
+                    })
+                
+                sarah_id = response4.json()["id"]
+                
+                response5 = client.patch(
+                    f"/api/v1/auth/staff/{sarah_id}/deactivate",
+                    headers={"Authorization": f"Bearer {owner_token}"}
+                )
+                response6 = client.patch(
+                    f"/api/v1/auth/staff/{sarah_id}/reactivate",
+                    headers={"Authorization": f"Bearer {owner_token}"}
+                )
+                
+                response8 = client.get("/api/v1/auth/staff",
+                    headers={"Authorization": f"Bearer {owner_token2}"}
+                )
+
+                staff_list = response8.json()
+                sarah = next(
+                    staff for staff in staff_list
+                    if staff["id"] == str(sarah_id)
+                )
+
+                
+                assert response1.status_code == 201
+                assert response2.status_code == 201
+                assert response3.status_code == 201
+                assert response4.status_code == 201
+                assert response6.status_code == 404
+                assert response5.status_code == 404
+                assert response8.status_code == 200
+                assert len(staff_list) == 1
+                assert sarah["is_active"] is True
