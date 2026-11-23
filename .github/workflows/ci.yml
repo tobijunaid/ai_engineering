@@ -41,6 +41,14 @@ jobs:
         # Local dev runs on 3.13; 3.14 catches issues from the newer interpreter early.
         python-version: ["3.13"]
 
+    env:
+      SECRET_KEY: ci-secret-only-used-in-tests
+      DATABASE_URL: postgresql+psycopg://app_user:ci_password@localhost:5432/small_business_test_db
+      TEST_DATABASE_URL: postgresql+psycopg://app_user:ci_password@localhost:5432/small_business_test_db
+      REDIS_URL: redis://localhost:6379/0
+      ALGORITHM: HS256
+      PYTHONPATH: ${{ github.workspace }}/project_1/small-business-api
+
     defaults:
       run:
         working-directory: project_1/small-business-api
@@ -61,27 +69,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Diagnostic: show the real exception on an import-time failure, instead of
-      # pytest's bare "exit code 4". Can be removed once CI is reliably green.
-      - name: Check app imports
-        env:
-          SECRET_KEY: ci-secret-only-used-in-tests
-          DATABASE_URL: postgresql+psycopg://app_user:ci_password@localhost:5432/small_business_test_db
-          TEST_DATABASE_URL: postgresql+psycopg://app_user:ci_password@localhost:5432/small_business_test_db
-          REDIS_URL: redis://localhost:6379/0
-          ALGORITHM: HS256
+      # Diagnostic step — remove once CI is reliably green.
+      - name: Check environment
         run: |
+          set -ex
           python --version
-          pytest --version
+          pip list --format=columns | head -5
+          echo "PYTHONPATH=$PYTHONPATH"
+          echo "cwd=$(pwd)"
+          python -c "import sys; print('sys.path:', sys.path[:5])"
           python -c "from app.main import app; print('app imported OK')"
-          python -c "from app.core.config import settings; print('settings OK:', settings.database_url[:40])"
+          pytest --co -q 2>&1 | tail -5
 
       - name: Run tests
-        env:
-          # Settings() needs these loaded as real env vars; none is a real secret.
-          SECRET_KEY: ci-secret-only-used-in-tests
-          DATABASE_URL: postgresql+psycopg://app_user:ci_password@localhost:5432/small_business_test_db
-          TEST_DATABASE_URL: postgresql+psycopg://app_user:ci_password@localhost:5432/small_business_test_db
-          REDIS_URL: redis://localhost:6379/0
-          ALGORITHM: HS256
         run: pytest -v --tb=short
