@@ -74,3 +74,44 @@ def client(db_session): #client: overrides FastAPI's normal database dependency 
             yield test_client
     finally:
         app.dependency_overrides.clear()
+
+# ---------------------------------------------------------------------------
+# Auth helpers shared by feature tests (products, inventory, invoices, ...).
+# They remove the register -> login boilerplate from every test.
+# ---------------------------------------------------------------------------
+
+def register_and_login(client, business_name, full_name, email, password="TestPassword123"):
+    client.post("/api/v1/auth/register", json={
+        "business_name": business_name,
+        "full_name": full_name,
+        "email": email,
+        "password": password,
+    })
+    response = client.post("/api/v1/auth/login", data={"username": email, "password": password})
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+def owner_headers(client):
+    """Auth headers for the owner of 'Tobi Stores'."""
+    return register_and_login(client, "Tobi Stores", "Tobi Junaid", "owner@example.com")
+
+
+@pytest.fixture
+def staff_headers(client, owner_headers):
+    """Auth headers for a staff member of the same business as owner_headers."""
+    client.post("/api/v1/auth/staff", headers=owner_headers, json={
+        "full_name": "Staff Member",
+        "email": "staff@example.com",
+        "password": "TestPassword123",
+    })
+    response = client.post("/api/v1/auth/login", data={
+        "username": "staff@example.com", "password": "TestPassword123",
+    })
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+def other_owner_headers(client):
+    """Auth headers for the owner of a *different* business (for isolation tests)."""
+    return register_and_login(client, "Rival Stores", "Rival Owner", "rival@example.com")

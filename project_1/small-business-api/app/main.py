@@ -1,9 +1,10 @@
-from app.api.v1.auth import router as auth_router
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
 
+from app.api.v1.auth import router as auth_router
+from app.api.v1.products import router as products_router
 from app.db.dependencies import get_db
 
 app = FastAPI(
@@ -13,6 +14,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(products_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
@@ -28,5 +30,9 @@ def database_health(db: Session = Depends(get_db)):
         db.execute(text("SELECT 1"))
         return {"database": "connected"}
     except Exception:
-        return {"database": "disconnected"}
+        # 503 (not 200) so load balancers / monitoring tools see the app as unhealthy.
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"database": "disconnected"},
+        )
 
