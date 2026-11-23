@@ -20,4 +20,5 @@ EXPOSE 8000
 
 # Run migrations on boot, then start the server.
 # --host 0.0.0.0 so the container port is reachable from outside.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Hosts like Render inject $PORT; locally it falls back to 8000.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

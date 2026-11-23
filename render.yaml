@@ -1,0 +1,24 @@
+# Render Blueprint for the Small Business API (free web service, Docker).
+# The database is NOT defined here: use a free Neon Postgres (doesn't expire)
+# and paste its connection string into DATABASE_URL when Render asks.
+# Deploy: Render dashboard → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: small-business-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: ./project_1/small-business-api
+    dockerfilePath: ./project_1/small-business-api/Dockerfile
+    healthCheckPath: /health/database
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - project_1/small-business-api/**
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true   # Render creates a long random value
+      - key: DATABASE_URL
+        sync: false           # you paste the Neon URL in the dashboard; never committed

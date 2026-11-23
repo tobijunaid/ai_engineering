@@ -89,6 +89,19 @@ The test suite builds its own schema in `small_business_test_db` and refuses to 
 
 ---
 
+## Deploy (free: Render + Neon)
+
+The repo root has a `render.yaml` blueprint. Both tiers are free. The free Render instance sleeps after ~15 min idle, so the first request after a pause takes ~30–60s.
+
+1. **Database:** create a free project at [neon.tech](https://neon.tech) and copy its connection string (`postgresql://…?sslmode=require`). The app converts it to the `psycopg` driver automatically.
+2. **API:** Render dashboard → **New → Blueprint** → select this repo. When prompted, paste the Neon URL into `DATABASE_URL`. `SECRET_KEY` is generated for you.
+3. Render builds the Docker image; the container runs `alembic upgrade head` then starts uvicorn on Render's `$PORT`.
+4. Check `https://<your-service>.onrender.com/health/database` → `{"database": "connected"}`, then open `/docs`.
+
+Registration is open on the demo, so anyone can create a test business. Each business only sees its own data.
+
+---
+
 ## Endpoint summary
 
 All endpoints live under `/api/v1`. Full request/response shapes are at `/docs` once the app is running.
