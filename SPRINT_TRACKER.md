@@ -21,7 +21,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | Customers (CRUD + search, no delete) | ✅ | ✅ | ✅ (9 tests) |
 | Invoices (draft → confirm → void) | ✅ (+ void-audit migration) | ✅ | ✅ (21 tests) |
 | Payments (full/partial) | ✅ | ✅ | ✅ (15 tests) |
-| Deployment (Docker, CI) | — | ⬜ | ⬜ |
+| Deployment (Docker, CI) | Docker ✅ · CI ⬜ | — | — |
 
 ### Bugs
 
@@ -31,7 +31,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 
 ### Technical debt
 
-- [ ] **P2** `requirements.txt` is UTF-16 encoded (PowerShell `pip freeze >` default). Git treats it as binary, so diffs are unreadable. Regenerate with `pip freeze | Out-File -Encoding utf8 requirements.txt`.
+- [x] **P2** ~~`requirements.txt` is UTF-16 encoded.~~ Re-encoded to UTF-8 2026-11-23.
 - [ ] **P2** Both `passlib` and `pwdlib` are installed; only `pwdlib` is used. `python-jose` is poorly maintained — consider `PyJWT`.
 - [x] **P3** ~~`app/main.py` has duplicate imports.~~
 - [ ] **P3** `.coverage` is committed at the repo root (it's a generated file).
@@ -46,9 +46,10 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **P3** No pagination on movement history or customer list.
 - [x] **P2** ~~Customer invoice history~~ — `GET /customers/{id}/invoices` added with invoices.
 - [x] **P1** ~~Migration `e4f8a2c6d913` (void audit columns + `void_reversal`) must be applied to the dev DB.~~ Applied 2026-11-23.
-- [ ] **P2** README endpoint table (§7) is out of date: inventory, invoice-item and customer-history endpoints differ from the original plan. Update when documenting.
+- [x] **P2** ~~README endpoint table out of date.~~ Parent design README now points to the implementation README for the real table; `small-business-api/README.md` written 2026-11-23.
 - [ ] **P3** Invoice numbers are `INV-00001` strings; list ordering sorts them as text, which breaks after 99,999 invoices. Fine for an MVP.
 - [ ] **P3** No pagination on invoice list.
+- [ ] **P3** No GitHub Actions CI yet — Docker image is built but tests don't run automatically on push.
 - [ ] **P2** A mistaken payment can't be corrected or reversed (no edit/delete/refund), and it also blocks voiding the invoice. Needs a "payment reversal" feature before real use.
 - [ ] **P3** An invoice whose total is 0.00 (all items priced at 0) can never become `paid`: payments must be > 0. Could auto-mark it paid on confirm.
 - [ ] **P3** `amount_paid` / `balance_due` are calculated in Python by loading all payments. Fine for a few payments per invoice; a SQL `SUM` would scale better for reports.
