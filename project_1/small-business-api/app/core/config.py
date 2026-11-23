@@ -7,11 +7,15 @@ class Settings(BaseSettings):
     secret_key: str
     database_url: str
     redis_url: str
+    test_database_url: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8"
     )
+    
+    access_token_expire_minutes: int = 30
+    algorithm: str = "HS256"
 
 
 settings = Settings()  # type: ignore

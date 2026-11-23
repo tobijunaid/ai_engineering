@@ -181,7 +181,7 @@ All endpoints will be prefixed with `/api/v1`.
 | Payments       | POST   | `/invoices/{invoice_id}/payments` | Record a payment                    |
 | Payments       | GET    | `/invoices/{invoice_id}/payments` | List invoice payments               |
 
-The endpoint list is an initial design. Request schemas, response formats, filtering, pagination, and exact status codes will be defined during implementation.
+The endpoint list is the initial design. The **implemented** endpoints — which differ in a few places (notably staff management lives under `/auth/staff/*`, inventory movements and adjustments are nested under `/inventory/{product_id}/...`, and invoice items have their own `POST/PATCH/DELETE` endpoints) — are documented in [`small-business-api/README.md`](small-business-api/README.md) and at `/docs` when the app is running.
 
 ## 8. Technology Stack
 
@@ -355,9 +355,9 @@ Features that may be considered after the MVP include:
 
 ## 16. Project Status
 
-**Current stage:** Requirements and system design.
+**Current stage:** MVP complete (2026-11-23).
 
-Implementation will begin after the README and database schema have been reviewed and agreed upon.
+All six MVP modules — authentication/users, products, inventory, customers, invoices and payments — have working endpoints, Alembic migrations and tests (88 passing). The service runs locally with `uvicorn` or containerised via `docker compose up`. See [`small-business-api/README.md`](small-business-api/README.md) for setup instructions and [`../SPRINT_TRACKER.md`](../SPRINT_TRACKER.md) for known limits and follow-up work (refresh tokens, pagination, CI, deployment).
 
 ---
 

@@ -22,11 +22,7 @@ class User(Base):
     __tablename__ = "users"
 
     __table_args__ = (
-        UniqueConstraint(
-            "business_id",
-            "email",
-            name="uq_users_business_email"
-        ),
+        UniqueConstraint("email", name="uq_users_email"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
