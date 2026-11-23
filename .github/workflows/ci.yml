@@ -69,17 +69,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Diagnostic step — remove once CI is reliably green.
-      - name: Check environment
-        run: |
-          set -ex
-          python --version
-          pip list --format=columns | head -5
-          echo "PYTHONPATH=$PYTHONPATH"
-          echo "cwd=$(pwd)"
-          python -c "import sys; print('sys.path:', sys.path[:5])"
-          python -c "from app.main import app; print('app imported OK')"
-          pytest --co -q 2>&1 | tail -5
-
       - name: Run tests
         run: pytest -v --tb=short
