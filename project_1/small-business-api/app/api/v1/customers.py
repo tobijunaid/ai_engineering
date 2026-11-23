@@ -7,6 +7,8 @@ from app.core.security import get_current_user
 from app.db.dependencies import get_db
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerResponse, CustomerUpdate
+from app.schemas.invoice import InvoiceResponse
+from app.services.invoice_service import list_invoices
 from app.services.customer_service import (
     CustomerNotFoundError,
     create_customer,
@@ -65,3 +67,16 @@ def update_customer_endpoint(
         return update_customer(db, current_user, customer_id, data)
     except CustomerNotFoundError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+
+@router.get("/{customer_id}/invoices", response_model=list[InvoiceResponse])
+def customer_invoice_history(
+    customer_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        get_customer(db, current_user, customer_id)  # 404 if not in this business
+    except CustomerNotFoundError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    return list_invoices(db, current_user, customer_id=customer_id)

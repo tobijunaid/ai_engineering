@@ -19,7 +19,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | Products (CRUD + soft delete) | ✅ | ✅ | ✅ (14 tests) |
 | Inventory & stock movements | ✅ (+ `quantity_after` migration) | ✅ | ✅ (13 tests) |
 | Customers (CRUD + search, no delete) | ✅ | ✅ | ✅ (9 tests) |
-| Invoices (draft → confirm → void) | ✅ | ⬜ | ⬜ |
+| Invoices (draft → confirm → void) | ✅ (+ void-audit migration) | ✅ | ✅ (21 tests) |
 | Payments (full/partial) | ✅ | ⬜ | ⬜ |
 | Deployment (Docker, CI) | — | ⬜ | ⬜ |
 
@@ -44,7 +44,14 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **P3** Movement history order relies on `created_at`; rows created in one transaction share a timestamp. Fine in production, but a tie-breaker (or `clock_timestamp()`) would make ordering strict.
 - [ ] **P3** Manual `return` movements aren't linked to an invoice yet (`reference_id`) — revisit with the invoices module.
 - [ ] **P3** No pagination on movement history or customer list.
-- [ ] **P2** Customer invoice history (`GET /customers/{id}/invoices`) — build with the invoices module.
+- [x] **P2** ~~Customer invoice history~~ — `GET /customers/{id}/invoices` added with invoices.
+- [x] **P1** ~~Migration `e4f8a2c6d913` (void audit columns + `void_reversal`) must be applied to the dev DB.~~ Applied 2026-11-23.
+- [ ] **P2** README endpoint table (§7) is out of date: inventory, invoice-item and customer-history endpoints differ from the original plan. Update when documenting.
+- [ ] **P3** Invoice numbers are `INV-00001` strings; list ordering sorts them as text, which breaks after 99,999 invoices. Fine for an MVP.
+- [ ] **P3** No pagination on invoice list.
+- [ ] **P3** Prices are snapshotted when an item is added; if a product's price changes before confirmation, the draft keeps the old price. Deliberate (quoted price), but worth a "refresh prices" action later.
+- [ ] **P3** Confirm doesn't re-check whether a product was deactivated after being added to the draft.
+- [ ] **P3** Invoice-module errors use an `ERROR_STATUS` map + `_run()` helper; products/inventory/customers still use per-endpoint try/except. Consider unifying (e.g. FastAPI exception handlers) — compare both styles first.
 - [ ] **P3** Customer search uses `ILIKE '%term%'`, which can't use a normal index — fine for small data; consider `pg_trgm` later.
 - [ ] **P3** Customer emails aren't checked for duplicates (deliberate: households may share contact details).
 - [ ] **P3** Older auth tests still repeat register/login boilerplate — could use the new `owner_headers` / `staff_headers` fixtures in `conftest.py`.
@@ -76,6 +83,14 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **"Optional" vs "nullable" in PATCH schemas** — the null-update bug: `str | None` lets clients send `null`; `field_validator` blocks it for required columns.
 - [ ] **Reproduce bugs with a failing test first**, then fix — how the null bug was handled.
 - [ ] **`or_()` and `ilike()`** in SQLAlchemy — building search queries.
+- [ ] **State machines** — invoice lifecycle draft → confirmed → void, and guarding each transition (`_require_status`).
+- [ ] **Atomic multi-row operations** — confirming N items: all stock changes succeed or none do (`rollback`).
+- [ ] **Locking for correctness** — invoice row lock on confirm/void (double-click problem); business row lock for invoice numbering.
+- [ ] **N+1 queries and `selectinload`** — why the invoice list loads items in one extra query.
+- [ ] **Snapshots in invoice items** — why `product_name` / `unit_price` are copied instead of looked up.
+- [ ] **ORM cascades** — `cascade="all, delete-orphan"`: removing an item from `invoice.items` deletes the row.
+- [ ] **Alembic: changing a CHECK constraint** — drop + recreate; why downgrade can fail when data uses the new value.
+- [ ] **`Query(alias=...)`** — the URL name vs the Python name.
 - [ ] **HTTP status codes** — 201 vs 200, 401 vs 403, 404 vs 409, 422.
 
 ### Decisions log
@@ -94,6 +109,13 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | 2026-11-23 | One internal `_apply_stock_change()`; it never commits | Single place that enforces "no negative stock" + writes a movement; invoices will reuse it inside one transaction. |
 | 2026-11-23 | Customers have no delete endpoint | Not in the design doc; invoices reference customers. Avoids a migration for `is_active`. |
 | 2026-11-23 | Customer email/phone/address can be cleared with `null`; `full_name` cannot | Matches which columns are nullable in the DB. |
+| 2026-11-23 | Invoices get `voided_at` / `voided_by` / `void_reason` (reason required) | Rule 6.2: cancellation details must stay auditable. |
+| 2026-11-23 | Void restores stock with a new `void_reversal` movement type | Keeps cancelled sales distinct from genuine customer returns in the ledger. |
+| 2026-11-23 | Invoices with payments cannot be voided (409) | No refunds module; money records never point at a void invoice. |
+| 2026-11-23 | Drafts are voided, never deleted | Invoice numbers stay gap-free; nothing is ever lost. |
+| 2026-11-23 | Invoice number = `INV-` + per-business count, generated under a business row lock | Simple and gap-free because invoices are never deleted. |
+| 2026-11-23 | Owners + staff create/edit/confirm; only owners void | Matches design §5. |
+| 2026-11-23 | `total = subtotal` | Tax/discounts are out of scope (README §15). |
 | 2026-11-23 | SKU unique per business, not globally | Two shops can both use “RICE-50”. Already enforced by a DB constraint; the service checks first to return a clean 409. |
 
 ---

@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -103,6 +104,22 @@ class Invoice(Base):
 
     confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
+        nullable=True
+    )
+
+    # Void audit trail (rule 6.2): who cancelled the invoice, when, and why.
+    voided_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    voided_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True
+    )
+
+    void_reason: Mapped[str | None] = mapped_column(
+        Text,
         nullable=True
     )
 
