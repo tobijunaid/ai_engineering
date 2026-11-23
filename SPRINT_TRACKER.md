@@ -49,7 +49,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [x] **P2** ~~README endpoint table out of date.~~ Parent design README now points to the implementation README for the real table; `small-business-api/README.md` written 2026-11-23.
 - [ ] **P3** Invoice numbers are `INV-00001` strings; list ordering sorts them as text, which breaks after 99,999 invoices. Fine for an MVP.
 - [ ] **P3** No pagination on invoice list.
-- [x] **P3** ~~No GitHub Actions CI yet.~~ Workflow added 2026-11-23: pytest on push/PR with a Postgres service.
+- [x] **P3** ~~No GitHub Actions CI yet.~~ Workflow added 2026-11-23: pytest on push/PR with a Postgres service. Fixed rootdir bug (pytest walked to repo-root `.git` instead of project dir) with `pyproject.toml` + `PYTHONPATH`.
 - [ ] **P2** A mistaken payment can't be corrected or reversed (no edit/delete/refund), and it also blocks voiding the invoice. Needs a "payment reversal" feature before real use.
 - [ ] **P3** An invoice whose total is 0.00 (all items priced at 0) can never become `paid`: payments must be > 0. Could auto-mark it paid on confirm.
 - [ ] **P3** `amount_paid` / `balance_due` are calculated in Python by loading all payments. Fine for a few payments per invoice; a SQL `SUM` would scale better for reports.
