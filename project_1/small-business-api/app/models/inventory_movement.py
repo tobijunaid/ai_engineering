@@ -32,6 +32,10 @@ class InventoryMovement(Base):
             "quantity > 0",
             name="ck_inventory_movements_quantity_positive"
         ),
+        CheckConstraint(
+            "quantity_after >= 0",
+            name="ck_inventory_movements_quantity_after_nonnegative"
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -55,6 +59,13 @@ class InventoryMovement(Base):
     )
 
     quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    # Stock balance immediately after this movement. Turns the movements table into a
+    # ledger: direction is always derivable, and history can be audited/reconciled.
+    quantity_after: Mapped[int] = mapped_column(
         Integer,
         nullable=False
     )

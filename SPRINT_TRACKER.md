@@ -17,7 +17,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | --- | --- | --- | --- |
 | Auth & users (owner/staff, JWT) | ✅ | ✅ | ✅ |
 | Products (CRUD + soft delete) | ✅ | ✅ | ✅ (14 tests) |
-| Inventory & stock movements | ✅ | ⬜ | ⬜ |
+| Inventory & stock movements | ✅ (+ `quantity_after` migration) | ✅ | ✅ (13 tests) |
 | Customers | ✅ | ⬜ | ⬜ |
 | Invoices (draft → confirm → void) | ✅ | ⬜ | ⬜ |
 | Payments (full/partial) | ✅ | ⬜ | ⬜ |
@@ -36,7 +36,12 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **P3** Login has no refresh tokens yet (design doc lists "access and refresh token support").
 - [ ] **P3** Staff "subject to permission" (design doc §5) isn't implemented — there are only two roles, no fine-grained permissions.
 - [ ] **P3** Products list has no pagination (`limit`/`offset`) — fine for a small shop, needed before large catalogues.
-- [ ] **P3** Product responses don't include current stock quantity — add when the inventory module lands.
+- [ ] **P3** Product responses don't include stock quantity — use `GET /inventory` for now; could add to `ProductResponse` later (watch out for N+1 queries).
+- [x] **P2** ~~Migration `b7c4e1a9f302` (adds `quantity_after`) must be applied to the dev DB.~~ Applied 2026-11-23.
+- [ ] **P3** `alembic ... --sql` (offline mode) is broken: `run_migrations_offline()` reads the placeholder URL in `alembic.ini` instead of `settings.database_url`.
+- [ ] **P3** Movement history order relies on `created_at`; rows created in one transaction share a timestamp. Fine in production, but a tie-breaker (or `clock_timestamp()`) would make ordering strict.
+- [ ] **P3** Manual `return` movements aren't linked to an invoice yet (`reference_id`) — revisit with the invoices module.
+- [ ] **P3** No pagination on movement history.
 - [ ] **P3** Older auth tests still repeat register/login boilerplate — could use the new `owner_headers` / `staff_headers` fixtures in `conftest.py`.
 - [ ] **P3** Untested: the 503 path of `/health/database` (needs a fake broken DB session).
 - [ ] **P3** Silence the `StarletteDeprecationWarning` about `httpx` in tests (dependency version issue).
@@ -56,6 +61,13 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **Custom exceptions** (`ProductNotFoundError`) vs plain `ValueError` — the product service uses custom ones; auth still uses `ValueError`. Compare both.
 - [ ] **`db.flush()` vs `db.commit()`** — getting an ID mid-transaction; product + inventory saved atomically.
 - [ ] **pytest fixtures that depend on fixtures** — `staff_headers` uses `owner_headers` uses `client` uses `db_session`.
+- [ ] **Ledger pattern** — movements as an append-only history with `quantity_after`; the inventory row is a cached running total.
+- [ ] **Row locking** — `SELECT ... FOR UPDATE` (`with_for_update()`) and the race condition it prevents (two sales of the last item).
+- [ ] **Transaction boundaries** — why `_apply_stock_change()` does *not* commit, so invoice confirmation can change many products atomically.
+- [ ] **SQL joins in SQLAlchemy** — `select(...).join(...)` returning rows rather than ORM objects.
+- [ ] **`now()` in PostgreSQL** — returns transaction start time, not wall-clock time.
+- [ ] **Alembic by hand** — adding a NOT NULL column to a table that may have rows (temporary `server_default`).
+- [ ] **`Literal` types in Pydantic** — restricting a field to allowed values (how `sale` is blocked).
 - [ ] **HTTP status codes** — 201 vs 200, 401 vs 403, 404 vs 409, 422.
 
 ### Decisions log
@@ -68,6 +80,10 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | 2026-11-23 | Creating a product auto-creates its inventory row at quantity 0; no initial stock field | Every stock change must go through the inventory module so it gets a movement record (rule 6.1). |
 | 2026-11-23 | Owners + staff can create/update products; only owners can deactivate | Simple default for “staff: subject to permission”; revisit if fine-grained permissions are added. |
 | 2026-11-23 | Another business's product returns 404, not 403 | Don't reveal that the record exists. |
+| 2026-11-23 | Movements store `quantity_after` (stock balance after the movement) | `quantity` is always positive, so `adjustment` had no direction. Also makes the history an auditable ledger. Chosen over signed quantities / decrease-only adjustments. |
+| 2026-11-23 | No manual `sale` movements | Sales only come from confirmed invoices (rule 6.1). |
+| 2026-11-23 | Adjustment takes the counted total (`new_quantity`) + required reason; owner-only | Matches how a stocktake works; rewriting the books needs accountability. |
+| 2026-11-23 | One internal `_apply_stock_change()`; it never commits | Single place that enforces "no negative stock" + writes a movement; invoices will reuse it inside one transaction. |
 | 2026-11-23 | SKU unique per business, not globally | Two shops can both use “RICE-50”. Already enforced by a DB constraint; the service checks first to return a clean 409. |
 
 ---
