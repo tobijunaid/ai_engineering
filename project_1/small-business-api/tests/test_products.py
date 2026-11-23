@@ -157,3 +157,14 @@ def test_staff_cannot_deactivate_product(client, owner_headers, staff_headers):
     response = client.patch(f"{PRODUCTS_URL}/{product['id']}/deactivate", headers=staff_headers)
 
     assert response.status_code == 403
+
+
+def test_update_required_field_to_null_rejected(client, owner_headers):
+    # Optional in a PATCH means "may be omitted", not "may be set to null":
+    # name/sku/selling_price are NOT NULL columns in the database.
+    product = create_rice(client, owner_headers)
+    for field in ("name", "sku", "selling_price"):
+        response = client.patch(
+            f"{PRODUCTS_URL}/{product['id']}", json={field: None}, headers=owner_headers
+        )
+        assert response.status_code == 422, field

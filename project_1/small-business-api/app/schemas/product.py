@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ProductCreate: what a client must send to create a product.
@@ -24,6 +24,15 @@ class ProductUpdate(BaseModel):
     selling_price: Decimal | None = Field(
         default=None, ge=0, max_digits=12, decimal_places=2
     )
+
+    # "Optional" here means "may be omitted", not "may be set to null".
+    # Validators only run on fields the client actually sent, so omitting is still fine.
+    @field_validator("name", "sku", "selling_price")
+    @classmethod
+    def reject_null(cls, value):
+        if value is None:
+            raise ValueError("cannot be null")
+        return value
 
 
 class ProductResponse(BaseModel):
