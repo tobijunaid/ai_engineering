@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.customers import router as customers_router
 from app.api.v1.inventory import router as inventory_router
 from app.api.v1.products import router as products_router
 from app.db.dependencies import get_db
@@ -17,6 +18,7 @@ app = FastAPI(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(products_router, prefix="/api/v1")
 app.include_router(inventory_router, prefix="/api/v1")
+app.include_router(customers_router, prefix="/api/v1")
 
 @app.get("/")
 def root():

@@ -18,7 +18,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | Auth & users (owner/staff, JWT) | ✅ | ✅ | ✅ |
 | Products (CRUD + soft delete) | ✅ | ✅ | ✅ (14 tests) |
 | Inventory & stock movements | ✅ (+ `quantity_after` migration) | ✅ | ✅ (13 tests) |
-| Customers | ✅ | ⬜ | ⬜ |
+| Customers (CRUD + search, no delete) | ✅ | ✅ | ✅ (9 tests) |
 | Invoices (draft → confirm → void) | ✅ | ⬜ | ⬜ |
 | Payments (full/partial) | ✅ | ⬜ | ⬜ |
 | Deployment (Docker, CI) | — | ⬜ | ⬜ |
@@ -26,6 +26,8 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 ### Bugs
 
 - [x] **P1** ~~`/health/database` returns HTTP 200 even when the DB is disconnected — monitoring tools would think the app is healthy.~~ Now returns 503.
+
+- [x] **P1** ~~`PATCH /products/{id}` with `{"name": null}` → 500 crash (DB NOT NULL violation).~~ Fixed with a `reject_null` validator; regression test added.
 
 ### Technical debt
 
@@ -41,7 +43,10 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **P3** `alembic ... --sql` (offline mode) is broken: `run_migrations_offline()` reads the placeholder URL in `alembic.ini` instead of `settings.database_url`.
 - [ ] **P3** Movement history order relies on `created_at`; rows created in one transaction share a timestamp. Fine in production, but a tie-breaker (or `clock_timestamp()`) would make ordering strict.
 - [ ] **P3** Manual `return` movements aren't linked to an invoice yet (`reference_id`) — revisit with the invoices module.
-- [ ] **P3** No pagination on movement history.
+- [ ] **P3** No pagination on movement history or customer list.
+- [ ] **P2** Customer invoice history (`GET /customers/{id}/invoices`) — build with the invoices module.
+- [ ] **P3** Customer search uses `ILIKE '%term%'`, which can't use a normal index — fine for small data; consider `pg_trgm` later.
+- [ ] **P3** Customer emails aren't checked for duplicates (deliberate: households may share contact details).
 - [ ] **P3** Older auth tests still repeat register/login boilerplate — could use the new `owner_headers` / `staff_headers` fixtures in `conftest.py`.
 - [ ] **P3** Untested: the 503 path of `/health/database` (needs a fake broken DB session).
 - [ ] **P3** Silence the `StarletteDeprecationWarning` about `httpx` in tests (dependency version issue).
@@ -68,6 +73,9 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **`now()` in PostgreSQL** — returns transaction start time, not wall-clock time.
 - [ ] **Alembic by hand** — adding a NOT NULL column to a table that may have rows (temporary `server_default`).
 - [ ] **`Literal` types in Pydantic** — restricting a field to allowed values (how `sale` is blocked).
+- [ ] **"Optional" vs "nullable" in PATCH schemas** — the null-update bug: `str | None` lets clients send `null`; `field_validator` blocks it for required columns.
+- [ ] **Reproduce bugs with a failing test first**, then fix — how the null bug was handled.
+- [ ] **`or_()` and `ilike()`** in SQLAlchemy — building search queries.
 - [ ] **HTTP status codes** — 201 vs 200, 401 vs 403, 404 vs 409, 422.
 
 ### Decisions log
@@ -84,6 +92,8 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | 2026-11-23 | No manual `sale` movements | Sales only come from confirmed invoices (rule 6.1). |
 | 2026-11-23 | Adjustment takes the counted total (`new_quantity`) + required reason; owner-only | Matches how a stocktake works; rewriting the books needs accountability. |
 | 2026-11-23 | One internal `_apply_stock_change()`; it never commits | Single place that enforces "no negative stock" + writes a movement; invoices will reuse it inside one transaction. |
+| 2026-11-23 | Customers have no delete endpoint | Not in the design doc; invoices reference customers. Avoids a migration for `is_active`. |
+| 2026-11-23 | Customer email/phone/address can be cleared with `null`; `full_name` cannot | Matches which columns are nullable in the DB. |
 | 2026-11-23 | SKU unique per business, not globally | Two shops can both use “RICE-50”. Already enforced by a DB constraint; the service checks first to return a clean 409. |
 
 ---
