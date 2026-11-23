@@ -47,6 +47,8 @@ class InvoiceResponse(BaseModel):
     payment_status: str
     subtotal: Decimal
     total: Decimal
+    amount_paid: Decimal   # calculated from payments
+    balance_due: Decimal   # total - amount_paid
     items: list[InvoiceItemResponse]
     created_by: UUID
     confirmed_at: datetime | None

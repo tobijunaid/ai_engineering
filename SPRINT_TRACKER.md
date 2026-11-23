@@ -20,7 +20,7 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | Inventory & stock movements | ✅ (+ `quantity_after` migration) | ✅ | ✅ (13 tests) |
 | Customers (CRUD + search, no delete) | ✅ | ✅ | ✅ (9 tests) |
 | Invoices (draft → confirm → void) | ✅ (+ void-audit migration) | ✅ | ✅ (21 tests) |
-| Payments (full/partial) | ✅ | ⬜ | ⬜ |
+| Payments (full/partial) | ✅ | ✅ | ✅ (15 tests) |
 | Deployment (Docker, CI) | — | ⬜ | ⬜ |
 
 ### Bugs
@@ -49,6 +49,9 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **P2** README endpoint table (§7) is out of date: inventory, invoice-item and customer-history endpoints differ from the original plan. Update when documenting.
 - [ ] **P3** Invoice numbers are `INV-00001` strings; list ordering sorts them as text, which breaks after 99,999 invoices. Fine for an MVP.
 - [ ] **P3** No pagination on invoice list.
+- [ ] **P2** A mistaken payment can't be corrected or reversed (no edit/delete/refund), and it also blocks voiding the invoice. Needs a "payment reversal" feature before real use.
+- [ ] **P3** An invoice whose total is 0.00 (all items priced at 0) can never become `paid`: payments must be > 0. Could auto-mark it paid on confirm.
+- [ ] **P3** `amount_paid` / `balance_due` are calculated in Python by loading all payments. Fine for a few payments per invoice; a SQL `SUM` would scale better for reports.
 - [ ] **P3** Prices are snapshotted when an item is added; if a product's price changes before confirmation, the draft keeps the old price. Deliberate (quoted price), but worth a "refresh prices" action later.
 - [ ] **P3** Confirm doesn't re-check whether a product was deactivated after being added to the draft.
 - [ ] **P3** Invoice-module errors use an `ERROR_STATUS` map + `_run()` helper; products/inventory/customers still use per-endpoint try/except. Consider unifying (e.g. FastAPI exception handlers) — compare both styles first.
@@ -91,6 +94,9 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 - [ ] **ORM cascades** — `cascade="all, delete-orphan"`: removing an item from `invoice.items` deletes the row.
 - [ ] **Alembic: changing a CHECK constraint** — drop + recreate; why downgrade can fail when data uses the new value.
 - [ ] **`Query(alias=...)`** — the URL name vs the Python name.
+- [ ] **Derived vs stored values** — why `amount_paid`/`balance_due` are `@property`s computed from payments rather than columns (single source of truth), while `payment_status` *is* stored (cheap to filter on).
+- [ ] **Nested resource URLs** — `/invoices/{invoice_id}/payments` and a path parameter in the router prefix.
+- [ ] **`pytest.mark.parametrize`** — one test function, several inputs.
 - [ ] **HTTP status codes** — 201 vs 200, 401 vs 403, 404 vs 409, 422.
 
 ### Decisions log
@@ -116,6 +122,10 @@ Updated at the end of every feature. Generated code ≠ understanding — the "R
 | 2026-11-23 | Invoice number = `INV-` + per-business count, generated under a business row lock | Simple and gap-free because invoices are never deleted. |
 | 2026-11-23 | Owners + staff create/edit/confirm; only owners void | Matches design §5. |
 | 2026-11-23 | `total = subtotal` | Tax/discounts are out of scope (README §15). |
+| 2026-11-23 | Payments only on confirmed invoices; never above balance (409); invoice row locked while recording | Rule 6.3; locking prevents two simultaneous payments overpaying. |
+| 2026-11-23 | `payment_method` limited to cash / bank_transfer / card / mobile_money / other (API-level) | DB column is free text; validation keeps data clean without a migration. |
+| 2026-11-23 | `amount_paid` / `balance_due` computed, not stored | Can never drift out of sync with the payment records. |
+| 2026-11-23 | Payments are immutable (no edit/delete endpoints) | Not in the design; money records should be append-only. Corrections → future reversal feature. |
 | 2026-11-23 | SKU unique per business, not globally | Two shops can both use “RICE-50”. Already enforced by a DB constraint; the service checks first to return a clean 409. |
 
 ---

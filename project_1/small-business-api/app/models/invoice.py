@@ -154,3 +154,13 @@ class Invoice(Base):
     "Payment",
     back_populates="invoice"
     )
+
+    # Calculated, not stored: always derived from the payment records, so the
+    # balance can never drift out of sync with the actual payments (rule 6.3).
+    @property
+    def amount_paid(self) -> Decimal:
+        return sum((p.amount for p in self.payments), Decimal("0.00"))
+
+    @property
+    def balance_due(self) -> Decimal:
+        return self.total - self.amount_paid

@@ -119,7 +119,7 @@ def list_invoices(
         .where(Invoice.business_id == user.business_id)
         # selectinload: fetch all invoices' items in ONE extra query, instead of one
         # query per invoice when the response is built (the "N+1 query" problem).
-        .options(selectinload(Invoice.items))
+        .options(selectinload(Invoice.items), selectinload(Invoice.payments))
         .order_by(Invoice.invoice_number.desc())
     )
     if status:

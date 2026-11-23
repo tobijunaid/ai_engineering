@@ -7,6 +7,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.customers import router as customers_router
 from app.api.v1.inventory import router as inventory_router
 from app.api.v1.invoices import router as invoices_router
+from app.api.v1.payments import router as payments_router
 from app.api.v1.products import router as products_router
 from app.db.dependencies import get_db
 
@@ -21,6 +22,7 @@ app.include_router(products_router, prefix="/api/v1")
 app.include_router(inventory_router, prefix="/api/v1")
 app.include_router(customers_router, prefix="/api/v1")
 app.include_router(invoices_router, prefix="/api/v1")
+app.include_router(payments_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
